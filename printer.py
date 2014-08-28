@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import datetime
 import sys
+import threading
 import traceback
 
 PROGBAR_LEN = 40
@@ -38,6 +39,9 @@ class CliPrinter:
         # used internally for tracking state
         self.progress_running = False
         self.line_needs_finishing = False
+
+        # create a mutex for thread-safe printing
+        self.lock = threading.Lock()
 
 
     def _get_colour_and_prefix(self, mode=None, success=None):
@@ -92,22 +96,25 @@ class CliPrinter:
 
         # calculate and format elapsed time
         t = self._get_time_elapsed(notime)
-        out.write(u'{}[{: <10}]{} {}{}{}{}'.format(
-            CliPrinter.YELLOW, prefix, CliPrinter.GREY, t, colour, msg, CliPrinter.END
-        ))
 
-        if extra is not None:
-            t = self._get_time_prefix(notime=True)
-            out.write(u'\n{}[{: <10}]  {}{}> {}{}'.format(
-                CliPrinter.YELLOW, prefix, CliPrinter.WHITE, t, CliPrinter.END, extra
+        # thread-safe printing to stdout
+        with self.lock:
+            out.write(u'{}[{: <10}]{} {}{}{}{}'.format(
+                CliPrinter.YELLOW, prefix, CliPrinter.GREY, t, colour, msg, CliPrinter.END
             ))
 
-        if nonl is True:
-            self.line_needs_finishing = True
-        else:
-            out.write(u'\n')
+            if extra is not None:
+                t = self._get_time_prefix(notime=True)
+                out.write(u'\n{}[{: <10}]  {}{}> {}{}'.format(
+                    CliPrinter.YELLOW, prefix, CliPrinter.WHITE, t, CliPrinter.END, extra
+                ))
 
-        out.flush()
+            if nonl is True:
+                self.line_needs_finishing = True
+            else:
+                out.write(u'\n')
+
+            out.flush()
 
 
     def progressi(self, amount, mode=None, notime=False):
@@ -194,11 +201,12 @@ class CliPrinter:
         self.print_newline()
 
     def print_newline(self):
-        if self.line_needs_finishing is True or self.progress_running is True:
-            self.progress_running = False
-            self.line_needs_finishing = False
-            sys.stdout.write(u'\n')
-            sys.stdout.flush()
+        with self.lock:
+            if self.line_needs_finishing is True or self.progress_running is True:
+                self.progress_running = False
+                self.line_needs_finishing = False
+                sys.stdout.write(u'\n')
+                sys.stdout.flush()
 
 
 class DummyPrinter:
