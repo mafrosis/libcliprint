@@ -103,7 +103,13 @@ class CliPrinter:
                 CliPrinter.YELLOW, prefix, CliPrinter.GREY, t, colour, msg, CliPrinter.END
             ))
 
-            if extra is not None:
+            if type(extra) is list:
+                t = self._get_time_prefix(notime=True)
+                for line in extra:
+                    out.write(u'\n{}[{: <10}]  {}{}> {}{}'.format(
+                        CliPrinter.YELLOW, prefix, CliPrinter.WHITE, t, CliPrinter.END, line
+                    ))
+            elif extra is not None:
                 t = self._get_time_prefix(notime=True)
                 out.write(u'\n{}[{: <10}]  {}{}> {}{}'.format(
                     CliPrinter.YELLOW, prefix, CliPrinter.WHITE, t, CliPrinter.END, extra
