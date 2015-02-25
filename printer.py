@@ -1,5 +1,6 @@
 import datetime
 import sys
+import traceback
 
 PROGBAR_LEN = 40
 
@@ -19,14 +20,16 @@ class CliPrinter:
     ERROR = 'ERROR'
     DEBUG = 'DEBUG'
 
-    def __init__(self, start=None, progressbar_len=PROGBAR_LEN, progressbar_char="#"):
+    def __init__(self, start=None, debug=False, progressbar_len=PROGBAR_LEN, progressbar_char="#"):
         self.start = start
+        self.debug = debug
         self.progressbar_len = progressbar_len
         self.progressbar_char = progressbar_char
 
         # used internally for tracking state
         self.progress_running = False
         self.line_needs_finishing = False
+
 
     def _get_colour_and_prefix(self, mode=None, success=None):
         colour = self.WHITE
@@ -53,7 +56,7 @@ class CliPrinter:
 
     def e(self, msg, mode=ERROR, excp=None, notime=False):
         if excp is not None:
-            self.p(msg, mode, success=False, notime=notime, extra=self.format_excp(excp))
+            self.p(msg, mode, success=False, notime=notime, extra=self.format_excp(excp, self.debug))
         else:
             self.p(msg, mode, success=False, notime=notime)
 
@@ -140,8 +143,16 @@ class CliPrinter:
         else:
             return ts
 
-    def format_excp(self, ex):
-        return '{}: {}'.format(ex.__class__.__name__, ex)
+
+    def format_excp(self, ex, debug=False):
+        msg = '{}: {}'.format(ex.__class__.__name__, ex)
+
+        if debug is True:
+            ex_type, ex, tb = sys.exc_info()
+            if tb is not None:
+                msg += '\n{}'.format(traceback.extract_tb(tb))
+
+        return msg
 
 
 class DummyPrinter:
