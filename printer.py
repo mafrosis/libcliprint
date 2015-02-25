@@ -94,7 +94,9 @@ class CliPrinter:
         ))
 
         if extra is not None:
-            out.write(u'{}\n'.format(extra))
+            out.write(u'\n{}[{: <10}]          {}> {}{}'.format(
+                CliPrinter.YELLOW, prefix, CliPrinter.WHITE, CliPrinter.END, extra
+            ))
 
         if nonl is True:
             self.line_needs_finishing = True
