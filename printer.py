@@ -17,7 +17,7 @@ class CliPrinter:
     ERROR = 'ERROR'
     DEBUG = 'DEBUG'
 
-    def __init__(self, start):
+    def __init__(self, start=None):
         self.start = start
         self.progress_running = False
 
@@ -44,6 +44,9 @@ class CliPrinter:
         return colour, prefix
 
     def p(self, msg, mode=None, notime=False, success=None, extra=None):
+        if self.start is None:
+            notime = True
+
         if self.progress_running:
             self.progress_running = False
             sys.stdout.write('\n')
@@ -57,15 +60,10 @@ class CliPrinter:
         if success is False:
             out = sys.stderr
 
-        if notime is True:
-            out.write('{}[{: <10}]          {}{}{}\n'.format(
-                CliPrinter.YELLOW, prefix, colour, msg, CliPrinter.END
-            ))
-        else:
-            t = self._get_time_elapsed()
-            out.write('{}[{: <10}]{} {: >4} {}{}{}\n'.format(
-                CliPrinter.YELLOW, prefix, CliPrinter.GREY, t, colour, msg, CliPrinter.END
-            ))
+        t = self._get_time_elapsed(notime)
+        out.write('{}[{: <10}]{} {: >4} {}{}{}'.format(
+            CliPrinter.YELLOW, prefix, CliPrinter.GREY, t, colour, msg, CliPrinter.END
+        ))
 
         if extra is not None:
             out.write('{}\n'.format(extra))
@@ -80,7 +78,11 @@ class CliPrinter:
         ))
         sys.stdout.flush()
 
-    def _get_time_elapsed(self, formatted=True):
+
+    def _get_time_elapsed(self, notime=False, formatted=True):
+        if notime is True or self.start is None:
+            return ' ' * 8
+
         ts = datetime.datetime.now() - self.start
         if formatted is True:
             formatted_ts = '{:02}:{:02}:{:02}'.format(
