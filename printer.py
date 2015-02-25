@@ -107,6 +107,7 @@ class CliPrinter:
         else:
             out.write(u'\n')
 
+        out.flush()
 
 
     def progressi(self, amount, mode=None, notime=False):
