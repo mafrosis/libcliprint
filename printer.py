@@ -13,20 +13,9 @@ class CliPrinter:
     GREY = '\033[90m'
     END = '\033[0m'
 
+    DEFAULT = 'MESSAGE'
     ERROR = 'ERROR'
     DEBUG = 'DEBUG'
-    DEPLOY = 'DEPLOY'
-    DNS = 'DNS'
-    HIGHSTATE = 'HIGHSTATE'
-    REBOOT = 'REBOOT'
-    RIAK = 'RIAK'
-    SALT = 'SALT'
-    SALTCLOUD = 'SALTCLOUD'
-    TEST = 'TESTS'
-    ELB = 'ELB'
-    GRAINS = 'GRAINS'
-    EC2 = 'EC2'
-    PILLAR = 'PILLAR'
 
     def __init__(self, start, quiet=False):
         self.start = start
@@ -43,7 +32,7 @@ class CliPrinter:
             prefix = 'DEBUG'
             colour = self.GREY
         elif mode is None:
-            prefix = 'DEPLOY'
+            prefix = self.DEFAULT
         else:
             prefix = mode
 
