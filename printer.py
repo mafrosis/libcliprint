@@ -1,6 +1,8 @@
 import datetime
 import sys
 
+PROGBAR_LEN = 40
+
 
 class CliPrinter:
     WHITE = '\033[97m'
@@ -17,8 +19,12 @@ class CliPrinter:
     ERROR = 'ERROR'
     DEBUG = 'DEBUG'
 
-    def __init__(self, start=None):
+    def __init__(self, start=None, progressbar_len=PROGBAR_LEN, progressbar_char="#"):
         self.start = start
+        self.progressbar_len = progressbar_len
+        self.progressbar_char = progressbar_char
+
+        # used internally for tracking state
         self.progress_running = False
         self.line_needs_finishing = False
 
@@ -76,13 +82,37 @@ class CliPrinter:
             out.write('\n')
 
 
-    def progress(self, amount, mode):
+    def progressi(self, amount, mode=None):
         self.progress_running = True
         colour, prefix = self._get_colour_and_prefix(mode)
 
+        self.progress_running = True
+
         t = self._get_time_elapsed()
         sys.stdout.write('\r{}[{: <10}]{} {: >4} {}{}{}'.format(
-            CliPrinter.YELLOW, prefix, CliPrinter.GREY, t, colour, (amount * '.'), CliPrinter.END
+            CliPrinter.YELLOW, prefix, CliPrinter.GREY, t, colour,
+            (amount * self.progressbar_char),
+            CliPrinter.END
+        ))
+        sys.stdout.flush()
+
+
+    def progressf(self, num_blocks, block_size, total_size):
+        self.progress_running = True
+
+        colour, prefix = self._get_colour_and_prefix(None)
+
+        # calculate progress bar size
+        progress = float(num_blocks * block_size) / float(total_size)
+        progress = progress if progress < 1 else 1
+
+        t = self._get_time_elapsed()
+        sys.stdout.write('\r{}[{: <10}]{} {: >4} {}[{}{}] {}%{}'.format(
+            CliPrinter.YELLOW, prefix, CliPrinter.GREY, t, colour,
+            self.progressbar_char * int(progress * self.progressbar_len),
+            ' ' * (self.progressbar_len - int(progress * self.progressbar_len)),
+            round(progress * 100, 1),
+            CliPrinter.END
         ))
         sys.stdout.flush()
 
@@ -110,5 +140,8 @@ class DummyPrinter:
     def p(self, msg, mode=None, notime=False, success=None, extra=None, nonl=False):
         pass
 
-    def progress(self, amount, mode):
+    def progressi(self, amount, mode=None):
+        pass
+
+    def progressf(self, num_blocks, block_size, total_size):
         pass
