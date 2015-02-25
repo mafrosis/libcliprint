@@ -70,10 +70,8 @@ class CliPrinter:
         if self.start is None:
             notime = True
 
-        if self.progress_running or self.line_needs_finishing:
-            self.progress_running = False
-            self.line_needs_finishing = False
-            sys.stdout.write(u'\n')
+        # print a newline if required (this also ends any active progress bars)
+        self.print_newline()
 
         # setup for print
         colour, prefix = self._get_colour_and_prefix(mode, success=success)
@@ -169,6 +167,9 @@ class CliPrinter:
         return msg
 
     def close(self):
+        self.print_newline()
+
+    def print_newline(self):
         if self.line_needs_finishing is True or self.progress_running is True:
             self.progress_running = False
             self.line_needs_finishing = False
