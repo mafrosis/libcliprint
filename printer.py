@@ -17,9 +17,8 @@ class CliPrinter:
     ERROR = 'ERROR'
     DEBUG = 'DEBUG'
 
-    def __init__(self, start, quiet=False):
+    def __init__(self, start):
         self.start = start
-        self.quiet = quiet
         self.progress_running = False
 
     def _get_colour_and_prefix(self, mode=None, success=None):
@@ -58,9 +57,6 @@ class CliPrinter:
         if success is False:
             out = sys.stderr
 
-        if self.quiet is True:
-            return
-
         if notime is True:
             out.write('{}[{: <10}]          {}{}{}\n'.format(
                 CliPrinter.YELLOW, prefix, colour, msg, CliPrinter.END
@@ -75,9 +71,6 @@ class CliPrinter:
             out.write('{}\n'.format(extra))
 
     def progress(self, amount, mode):
-        if self.quiet is True:
-            return
-
         self.progress_running = True
         colour, prefix = self._get_colour_and_prefix(mode)
 
@@ -98,3 +91,14 @@ class CliPrinter:
             return formatted_ts
         else:
             return ts
+
+
+class DummyPrinter:
+    def e(self, msg, mode=None, excp=None, notime=False):
+        pass
+
+    def p(self, msg, mode=None, notime=False, success=None, extra=None):
+        pass
+
+    def progress(self, amount, mode):
+        pass
