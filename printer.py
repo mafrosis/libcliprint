@@ -50,6 +50,14 @@ class CliPrinter:
 
         return colour, prefix
 
+
+    def e(self, msg, mode=ERROR, excp=None, notime=False):
+        if excp is not None:
+            self.p(msg, mode, success=False, notime=notime, extra=self.format_excp(excp))
+        else:
+            self.p(msg, mode, success=False, notime=notime)
+
+
     def p(self, msg, mode=None, notime=False, success=None, extra=None, nonl=False):
         if self.start is None:
             notime = True
@@ -131,6 +139,9 @@ class CliPrinter:
             return formatted_ts
         else:
             return ts
+
+    def format_excp(self, ex):
+        return '{}: {}'.format(ex.__class__.__name__, ex)
 
 
 class DummyPrinter:
