@@ -152,7 +152,7 @@ class CliPrinter:
                         CliPrinter.colours.YELLOW, prefix, CliPrinter.colours.WHITE,
                         t, CliPrinter.colours.END, line
                     ))
-            elif extra is not None:
+            elif extra:
                 t = self._get_time_prefix(notime=True)
                 out.write(u'\n{}[{: <10}]  {}{}> {}{}'.format(
                     CliPrinter.colours.YELLOW, prefix, CliPrinter.colours.WHITE,
