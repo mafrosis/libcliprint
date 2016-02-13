@@ -11,13 +11,22 @@ PROGBAR_LEN = 40
 
 class CliPrinter:
     class Colours:
-        def __init__(self, nocolour=False):
-            self.nocolour = nocolour
+        nocolour = False
+        _default = None
+
+        @property
+        def default(self):
+            return self._default or self.NORMAL
+
+        @default.setter
+        def default(self, val):
+            self._default = val
 
         def __getattr__(self, key):
             if self.nocolour:
                 return ''
             _colours = {
+                'NORMAL': '\033[37m',
                 'WHITE': '\033[97m',
                 'CYAN': '\033[96m',
                 'MAGENTA': '\033[95m',
@@ -40,7 +49,7 @@ class CliPrinter:
     log_output = False
     logs = []
 
-    def __init__(self, use_prefix=False, notimer=False, debug=False, progressbar_len=PROGBAR_LEN, progressbar_char="#", nocolour=False, app_name=None):
+    def __init__(self, use_prefix=False, notimer=False, debug=False, progressbar_len=PROGBAR_LEN, progressbar_char="#", nocolour=False, app_name=None, default_colour=None):
         if use_prefix is True and app_name is None:
             raise IllegalArgumentError('You must supply app_name when use_prefix is True')
 
@@ -50,6 +59,7 @@ class CliPrinter:
         self.progressbar_len = progressbar_len
         self.progressbar_char = progressbar_char
         self.colours.nocolour = nocolour
+        self.colours.default = default_colour
 
         # start the timer if it's in use
         if notimer is False:
@@ -58,14 +68,18 @@ class CliPrinter:
         # used internally for tracking state
         self.progress_running = False
         self.line_needs_finishing = False
+        self.infinite_progress = None
 
         # create a mutex for thread-safe printing
         self.lock = threading.Lock()
 
 
     @staticmethod
-    def _get_colour(success=None):
-        colour = CliPrinter.colours.WHITE
+    def _get_colour(success=None, bold=False):
+        colour = CliPrinter.colours.default or CliPrinter.colours.NORMAL
+
+        if bold:
+            colour = CliPrinter.colours.WHITE
 
         if success is True:
             colour = CliPrinter.colours.GREEN
@@ -105,12 +119,12 @@ class CliPrinter:
             self.p(msg, prefix, success=False, notime=notime)
 
 
-    def p(self, msg, prefix=None, notime=False, success=None, extra=None, nonl=False, tabular=False):
+    def p(self, msg, prefix=None, notime=False, success=None, extra=None, nonl=False, tabular=False, bold=False):
         # print a newline if required (this also ends any active progress bars)
         self.print_newline()
 
         # setup for print
-        colour = CliPrinter._get_colour(success=success)
+        colour = CliPrinter._get_colour(success=success, bold=bold)
         prefix = self._get_prefix(prefix)
 
         # default stdout
@@ -135,23 +149,19 @@ class CliPrinter:
 
         # thread-safe printing to stdout
         with self.lock:
-            out.write('{}{}{}{}{}{}{}'.format(
-                CliPrinter.colours.YELLOW, prefix, CliPrinter.colours.GREY,
+            out.write('{}{}{}{}{}{}'.format(
+                prefix, CliPrinter.colours.GREY,
                 t, colour, msg, CliPrinter.colours.END
             ))
 
             if type(extra) is list:
-                t = self._get_time_prefix(notime=True)
                 for line in extra:
-                    out.write('\n{}{} {}{}> {}{}'.format(
-                        CliPrinter.colours.YELLOW, prefix, CliPrinter.colours.WHITE,
-                        t, CliPrinter.colours.END, line
+                    out.write('\n{}> {}{}'.format(
+                        prefix, CliPrinter.colours.END, line
                     ))
-            elif extra:
-                t = self._get_time_prefix(notime=True)
-                out.write('\n{}{} {}{}> {}{}'.format(
-                    CliPrinter.colours.YELLOW, prefix, CliPrinter.colours.WHITE,
-                    t, CliPrinter.colours.END, extra
+            elif extra is not None:
+                out.write('\n{}> {}{}'.format(
+                    prefix, CliPrinter.colours.END, extra
                 ))
 
             if nonl is True:
@@ -177,7 +187,7 @@ class CliPrinter:
         sys.stdout.flush()
 
 
-    def progressf(self, prefix=None, num_blocks=None, block_size=1, total_size=None, extra=None, notime=False):
+    def progressf(self, num_blocks=None, block_size=1, total_size=None, extra=None, notime=False, prefix=None):
         if num_blocks is None or total_size is None:
             raise ProgressfArgumentError
 
@@ -194,8 +204,8 @@ class CliPrinter:
         progress = progress if progress < 1 else 1
 
         t = self._get_time_elapsed(notime)
-        sys.stdout.write('\r{}{}{}{}{}[ {}{} ] {}% {}{}{}'.format(
-            CliPrinter.colours.YELLOW, prefix, CliPrinter.colours.GREY, t, colour,
+        sys.stdout.write('\r{}{}{}{}[ {}{} ] {}%{}'.format(
+            prefix, CliPrinter.colours.GREY, t, colour,
             self.progressbar_char * int(progress * self.progressbar_len),
             ' ' * (self.progressbar_len - int(progress * self.progressbar_len)),
             round(progress * 100, 1),
