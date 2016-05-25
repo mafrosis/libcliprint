@@ -68,7 +68,7 @@ class CliPrinter:
         # used internally for tracking state
         self.progress_running = False
         self.line_needs_finishing = False
-        self.infinite_progress = None
+        self.infinite_progress_state = None
 
         # create a mutex for thread-safe printing
         self.lock = threading.Lock()
@@ -177,19 +177,27 @@ class CliPrinter:
             out.flush()
 
 
-    def progressi(self, amount, prefix=None, notime=False):
+    def progressi(self, prefix=None, notime=False):
         colour = CliPrinter._get_colour()
         prefix = self._get_prefix(prefix)
 
         self.progress_running = True
 
+        # start or reset the infinite progress counter
+        if not self.infinite_progress_state or self.infinite_progress_state == 4:
+            self.infinite_progress_state = 0
+
+        PROG_CHARS = ['|', '/', '-', '\\']
+
         t = self._get_time_elapsed(notime)
-        sys.stdout.write('\r{}{}{}{}{}{}{}'.format(
-            CliPrinter.colours.YELLOW, prefix, CliPrinter.colours.GREY, t, colour,
-            (amount * self.progressbar_char),
+        sys.stdout.write('\r{}{}{}{}[ {} ]{}'.format(
+            prefix, CliPrinter.colours.GREY, t, colour,
+            PROG_CHARS[self.infinite_progress_state] * self.progressbar_len,
             CliPrinter.colours.END
         ))
         sys.stdout.flush()
+
+        self.infinite_progress_state += 1
 
 
     def progressf(self, num_blocks=None, block_size=1, total_size=None, extra=None, notime=False, prefix=None):
@@ -218,6 +226,13 @@ class CliPrinter:
             CliPrinter.colours.END
         ))
         sys.stdout.flush()
+
+
+    def end_progress(self, force=False):
+        # end progress bar by displaying 100%
+        if force or self.progress_running is True:
+            self.infinite_progress_state = None
+            self.progressf(1, 1, 1)
 
 
     def _get_time_prefix(self, notime=False):
@@ -334,6 +349,7 @@ class CliPrinter:
         return msg, inner_msg, stacktrace
 
     def close(self):
+        self.end_progress()
         self.print_newline()
 
     def print_newline(self):
