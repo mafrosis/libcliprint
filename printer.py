@@ -149,9 +149,9 @@ class CliPrinter:
 
         # thread-safe printing to stdout
         with self.lock:
-            out.write('{}{}{}{}{}{}'.format(
-                prefix, CliPrinter.colours.GREY,
-                t, colour, msg, CliPrinter.colours.END
+            out.write('{prefix}{grey}{time}{colour}{msg}{end}'.format(
+                prefix=prefix, grey=CliPrinter.colours.GREY,
+                time=t, colour=colour, msg=msg, end=CliPrinter.colours.END
             ))
 
             # handle multi-line extra text, display it nicely
@@ -161,12 +161,12 @@ class CliPrinter:
 
             if type(extra) is list:
                 for line in extra:
-                    out.write('\n{}> {}{}'.format(
-                        prefix, CliPrinter.colours.END, line
+                    out.write('\n{prefix}> {end}{line}'.format(
+                        prefix=prefix, end=CliPrinter.colours.END, line=line
                     ))
             elif extra is not None:
-                out.write('\n{}> {}{}'.format(
-                    prefix, CliPrinter.colours.END, extra
+                out.write('\n{prefix}> {end}{extra}'.format(
+                    prefix=prefix, end=CliPrinter.colours.END, extra=extra
                 ))
 
             if nonl is True:
@@ -190,10 +190,10 @@ class CliPrinter:
         PROG_CHARS = ['|', '/', '-', '\\']
 
         t = self._get_time_elapsed(notime)
-        sys.stdout.write('\r{}{}{}{}[ {} ]{}'.format(
-            prefix, CliPrinter.colours.GREY, t, colour,
-            PROG_CHARS[self.infinite_progress_state] * self.progressbar_len,
-            CliPrinter.colours.END
+        sys.stdout.write('\r{prefix}{grey}{time}{colour}[ {progress} ]{end}'.format(
+            prefix=prefix, time=t, colour=colour,
+            progress=PROG_CHARS[self.infinite_progress_state] * self.progressbar_len,
+            grey=CliPrinter.colours.GREY, end=CliPrinter.colours.END
         ))
         sys.stdout.flush()
 
@@ -217,13 +217,12 @@ class CliPrinter:
         progress = progress if progress < 1 else 1
 
         t = self._get_time_elapsed(notime)
-        sys.stdout.write('\r{}{}{}{}[ {}{} ] {}%{}'.format(
-            prefix, CliPrinter.colours.GREY, t, colour,
-            self.progressbar_char * int(progress * self.progressbar_len),
-            ' ' * (self.progressbar_len - int(progress * self.progressbar_len)),
-            round(progress * 100, 1),
-            CliPrinter.colours.GREY, extra,
-            CliPrinter.colours.END
+        sys.stdout.write('\r{prefix}{grey}{time}{colour}[ {progress}{spacing} ] {value}%{grey}{extra}{end}'.format(
+            prefix=prefix, extra=extra, time=t, colour=colour,
+            progress=self.progressbar_char * int(progress * self.progressbar_len),
+            spacing=' ' * (self.progressbar_len - int(progress * self.progressbar_len)),
+            value=round(progress * 100, 1),
+            grey=CliPrinter.colours.GREY, end=CliPrinter.colours.END
         ))
         sys.stdout.flush()
 
